@@ -1,16 +1,17 @@
+
 const express = require('express');
-const recipeRouter = require('./routes/recipes.routes');
-const ingredientRouter = require('./routes/ingredients.routes');
-const fullRecipesRouter = require('./routes/fullRecipes.routes');
-const randomRouter = require('./routes/randomRecipe.routes');
+const bodyParser = require('body-parser');
+const todoRouter = require('./todo.routes'); 
+const dotenv = require('dotenv');
 const app = express();
 
-app.use(express.json());
+dotenv.config();
 
-app.use('/ingredients', ingredientRouter);
-app.use('/recipes', recipeRouter);
-app.use('/fullRecipes', fullRecipesRouter);
-app.use('/random', randomRouter);
+
+app.use(bodyParser.json());  
+
+
+app.use('/todo', todoRouter);
 
 app.listen(3000, () => {
     console.log('Server is running on Port 3000.');
