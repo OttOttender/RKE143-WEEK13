@@ -1,45 +1,47 @@
-
 const express = require('express');
-const db = require('../db'); 
-
+const db = require('../db');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const result = await db.query('SELECT * FROM todo;');
-        res.status(200).json({ todo: result.rows });
+        const todos = await db.query('SELECT * FROM todo;');
+        res.json(todos.rows);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({ message: 'Error fetching tasks' });
     }
 });
 
-
 router.post('/', async (req, res) => {
     const { task } = req.body;
-
+    
     try {
-        const result = await db.query('INSERT INTO todo (task) VALUES ($1) RETURNING id;', [task]);
-        res.status(201).json({ message: `1 row inserted with ID ${result.rows[0].id}` });
+        const existingTask = await db.query('SELECT * FROM todo WHERE task = $1;', [task]);
+        
+        if (existingTask.rows.length !== 0) {
+            return res.json({ message: 'Task already exists' });
+        }
+
+        const result = await db.query('INSERT INTO todo (task) VALUES ($1) RETURNING *;', [task]);
+        res.status(200).json({ message: `${result.rowCount} row inserted.` });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({ message: 'Error inserting task' });
     }
 });
 
 router.delete('/', async (req, res) => {
-    const { id } = req.body; 
+    const { id } = req.body;
 
     try {
-        const result = await db.query('DELETE FROM todo WHERE id = $1 RETURNING id;', [id]);
-        if (result.rowCount > 0) {
-            res.status(200).json({ message: `${result.rowCount} row(s) deleted.` });
-        } else {
-            res.status(404).json({ message: "No task found with that ID." });
+        const existingTask = await db.query('SELECT * FROM todo WHERE id = $1;', [id]);
+        
+        if (existingTask.rows.length === 0) {
+            return res.json({ message: 'No task found with that ID' });
         }
+
+        const result = await db.query('DELETE FROM todo WHERE id = $1 RETURNING *;', [id]);
+        res.status(200).json({ message: `${result.rowCount} row was deleted.` });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal Server Error" });
+        res.status(500).json({ message: 'Error deleting task' });
     }
 });
 
